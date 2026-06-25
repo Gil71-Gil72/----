@@ -1,9 +1,11 @@
-// 本地图片（你原来的，完全不动）
+// exam/src/api/index.js
+// 简单模拟远程 API：延迟 + 可配置失败概率（适合学生演示）
+
+// 本地图片帮助函数（保持不变）
 const getImage = (num) => {
   return new URL(`../assets/images/t${num}.jpg`, import.meta.url).href
 }
 
-// 商品数据（本地图片不变）
 const products = [
   { id: 1, name: '白色纯棉短袖', price: 59, img: getImage(1), desc: '100%纯棉，透气舒适' },
   { id: 2, name: '黑色潮流短袖', price: 69, img: getImage(2), desc: '潮流印花，百搭款式' },
@@ -16,35 +18,69 @@ const products = [
   { id: 9, name: '红色喜庆短袖', price: 66, img: getImage(9), desc: '喜庆大气，优质面料' }
 ]
 
-// ==============================
-// 你要的功能：模拟远程API + 99%失败
-// ==============================
+// 配置：演示用失败率和延迟
+// DEV_FAIL_PROB 在开发时生效（只在 import.meta.env.DEV === true 时启用），
+// 方便在生产时自动关闭失败模拟。
+const DEFAULT_DELAY = 200              // 毫秒，模拟网络延迟
+const DEV_FAIL_PROB = 1           // 开发环境下失败概率，0.01 = 1%
+// 若要强烈模拟失败，课堂演示可把上面改为 0.99 (99% 失败)
+
+// 辅助：决定本次请求是否失败
+function shouldFail() {
+  // 仅在开发环境按概率失败；生产 (build) 默认不失败
+  if (!import.meta.env.DEV) return false
+  return Math.random() < DEV_FAIL_PROB
+}
+
+// 获取商品列表
 export function getProducts() {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      // 99% 失败，1% 成功
-      if (Math.random() > 0.01) {
-        resolve(products)
-      } else {
-        reject(new Error("网络异常，请求失败"))
+      if (shouldFail()) {
+        reject(new Error('网络异常，请求商品列表失败（模拟）'))
+        return
       }
-    }, 200)
+      resolve(products)
+    }, DEFAULT_DELAY)
   })
 }
 
+// 根据 id 获取单个商品
 export function getProductById(id) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     setTimeout(() => {
+      if (shouldFail()) {
+        reject(new Error('网络异常，请求商品详情失败（模拟）'))
+        return
+      }
       const item = products.find(p => p.id == id)
       resolve(item)
-    }, 200)
+    }, DEFAULT_DELAY)
   })
 }
 
-export function createOrderAPI() {
-  return new Promise(resolve => setTimeout(() => resolve({ code: 200 }), 200))
+// 创建订单（模拟）
+export function createOrderAPI(orderData) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (shouldFail()) {
+        reject(new Error('创建订单失败（模拟）'))
+        return
+      }
+      resolve({ code: 200, orderId: Date.now().toString() })
+    }, DEFAULT_DELAY)
+  })
 }
 
-export function payOrderAPI() {
-  return new Promise(resolve => setTimeout(() => resolve('ok'), 200))
+// 支付订单（模拟）
+export function payOrderAPI(orderId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (shouldFail()) {
+        reject(new Error('支付失败（模拟）'))
+        return
+      }
+      resolve('ok')
+    }, DEFAULT_DELAY)
+  })
 }
