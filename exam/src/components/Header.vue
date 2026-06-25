@@ -16,7 +16,24 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getStorage } from '../utils/storage'
-const cartCount = computed(() => getStorage().cart.length || 0)
+
+// 计算购物车中商品总数量（所有项的 quantity 总和）
+const cartCount = ref(0)
+const updateCount = () => {
+  const cart = getStorage().cart || []
+  cartCount.value = cart.reduce((sum, item) => sum + (item.quantity || 0), 0)
+}
+
+onMounted(() => {
+  updateCount()
+  // 监听我们在 setStorage 里派发的事件
+  window.addEventListener('shopDataChanged', updateCount)
+})
+
+// 清理监听器
+onUnmounted(() => {
+  window.removeEventListener('shopDataChanged', updateCount)
+})
 </script>
